@@ -1,5 +1,5 @@
 #!/bin/bash
-
+cd vendor/NRI
 mkdir -p "_Build"
 
 cd "_Build"

@@ -9,7 +9,7 @@ set(NRI_AGILITY_SDK_VERSION_MAJOR "615" CACHE STRING "Agility SDK major version"
 set(NRI_AGILITY_SDK_VERSION_MINOR "1" CACHE STRING "Agility SDK minor version") # 1-preview
 set(NRI_SHADERS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/_Shaders" CACHE STRING "Shader output path override")
 
-option(NRI_STATIC_LIBRARY "Build static library" OFF)
+option(NRI_STATIC_LIBRARY "Build static library" ON)
 option(NRI_ENABLE_NVTX_SUPPORT "Annotations for NVIDIA Nsight Systems" ON)
 option(NRI_ENABLE_DEBUG_NAMES_AND_ANNOTATIONS "Enable debug names, host and device annotations" ON)
 option(NRI_ENABLE_NONE_SUPPORT "Enable NONE backend" ON)
@@ -17,16 +17,17 @@ option(NRI_ENABLE_VK_SUPPORT "Enable Vulkan backend" ON)
 option(NRI_ENABLE_VALIDATION_SUPPORT "Enable Validation backend (otherwise 'enableNRIValidation' is ignored)" ON)
 option(NRI_ENABLE_NIS_SDK "Enable NVIDIA Image Sharpening SDK" OFF)
 option(NRI_ENABLE_IMGUI_EXTENSION "Enable 'NRIImgui' extension" OFF)
+option(NRI_FORCE_C "Enable 'C' extension" OFF)
 
-cmake_dependent_option(NRI_ENABLE_D3D11_SUPPORT "Enable D3D11 backend" ON "WIN32" OFF)
-cmake_dependent_option(NRI_ENABLE_D3D12_SUPPORT "Enable D3D12 backend" ON "WIN32" OFF)
+cmake_dependent_option(NRI_ENABLE_D3D11_SUPPORT "Enable D3D11 backend" OFF "WIN32" OFF)
+cmake_dependent_option(NRI_ENABLE_D3D12_SUPPORT "Enable D3D12 backend" OFF "WIN32" OFF)
 cmake_dependent_option(NRI_ENABLE_D3D_EXTENSIONS "Enable vendor specific extension libraries for D3D (NVAPI and AMD AGS)" ON "NRI_ENABLE_D3D11_SUPPORT OR NRI_ENABLE_D3D12_SUPPORT" OFF)
-cmake_dependent_option(NRI_ENABLE_AGILITY_SDK_SUPPORT "Enable Agility SDK support to unlock access to latest D3D12 features" ON "NRI_ENABLE_D3D12_SUPPORT" OFF)
+cmake_dependent_option(NRI_ENABLE_AGILITY_SDK_SUPPORT "Enable Agility SDK support to unlock access to latest D3D12 features" OFF "NRI_ENABLE_D3D12_SUPPORT" OFF)
 cmake_dependent_option(NRI_ENABLE_XLIB_SUPPORT "Enable 'xlib' support" ON "NRI_ENABLE_VK_SUPPORT AND NOT WIN32" OFF)
 cmake_dependent_option(NRI_ENABLE_WAYLAND_SUPPORT "Enable 'wayland' support" ON "NRI_ENABLE_VK_SUPPORT AND NOT WIN32" OFF)
 cmake_dependent_option(NRI_ENABLE_NGX_SDK "Enable NVIDIA NGX (DLSS) SDK" OFF "NRI_ENABLE_D3D11_SUPPORT OR NRI_ENABLE_D3D12_SUPPORT OR NRI_ENABLE_VK_SUPPORT" OFF)
 cmake_dependent_option(NRI_ENABLE_FFX_SDK "Enable AMD FidelityFX SDK" OFF "(NRI_ENABLE_VK_SUPPORT OR NRI_ENABLE_D3D12_SUPPORT) AND WIN32" OFF)
-cmake_dependent_option(NRI_ENABLE_XESS_SDK "Enable INTEL XeSS SDK" OFF "NRI_ENABLE_D3D12_SUPPORT AND WIN32" OFF)
+
 
 # Is submodule?
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
@@ -34,7 +35,7 @@ if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
 else()
     set(IS_SUBMODULE ON)
 endif()
-
+set(IS_SUBMODULE ON)
 # Create project
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/Include/NRI.h" ver_h)
 string(REGEX MATCH "NRI_VERSION ([0-9]*)" _ ${ver_h})
@@ -69,6 +70,7 @@ endif()
 
 # Enable grouping of source files into folders in IDEs
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+set(CMAKE_CXX_COMPILER_ID "GNU")
 
 # Compile options
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -113,6 +115,8 @@ add_compile_definition(NRI_ENABLE_WAYLAND_SUPPORT)
 add_compile_definition(NRI_ENABLE_NGX_SDK)
 add_compile_definition(NRI_ENABLE_FFX_SDK)
 add_compile_definition(NRI_ENABLE_XESS_SDK)
+add_compile_definition(NRI_FORCE_C)
+
 
 # Find Windows SDK
 if(NRI_ENABLE_D3D11_SUPPORT OR NRI_ENABLE_D3D12_SUPPORT)
@@ -501,6 +505,8 @@ target_include_directories(NRI_Shared PRIVATE
     "Include"
     "Source/Shared"
 )
+
+target_link_libraries(NRI_Shared PRIVATE stdc++)
 
 if(NRI_ENABLE_AGILITY_SDK_SUPPORT)
     target_include_directories(NRI_Shared PRIVATE "${agilitysdk_SOURCE_DIR}/build/native/include")
